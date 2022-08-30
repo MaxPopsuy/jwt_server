@@ -1,4 +1,4 @@
-# Express Mongoose Starter pack
+# Simple jwt server with authentification
 
 ## Starter pack includes:
 
