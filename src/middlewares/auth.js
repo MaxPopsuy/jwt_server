@@ -1,21 +1,18 @@
-const jwt = require("jsonwebtoken");
-const { user } = require("../models");
+const passport = require("passport");
 
-module.exports = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).send("Unauthorized");
+module.exports = (req, res, next) => {
+  passport.authenticate(
+    "jwt",
+    {
+      session: false,
+    },
+    (error, user) => {
+      if (error || !user) {
+        res.status(401).send("Unauthorized");
+        return;
+      }
+      req.user = user;
+      next();
     }
-    const token = authHeader.slice(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const findedUser = await user.findById(decoded._id);
-    if (!findedUser) {
-      return res.status(401).send("Unauthorized");
-    }
-    req.user = findedUser;
-    next();
-  } catch (error) {
-    return res.status(401).send("Unauthorized");
-  }
+  )(req,res,next);
 };

@@ -8,6 +8,18 @@ exports.update = async (req, res, next) => {
     if (id !== req.user._id.toString()) {
       res.status(400).send("No access");
     }
+
+    const updatedUser = await user.findByIdAndUpdate(
+      id,
+      {
+        age,
+        description,
+      },
+      { new: true }
+    );
+    console.log(updatedUser);
+
+    res.json(updatedUser);
   } catch (error) {
     next(error);
   }

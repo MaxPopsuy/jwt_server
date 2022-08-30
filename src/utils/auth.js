@@ -8,3 +8,13 @@ exports.generateToken = async (user, time) => {
     expiresIn: time,
   });
 };
+exports.isExistent = async (user, username, res) => {
+  const existingUser = await user.findOne({
+    username,
+  });
+
+  if (existingUser) {
+    return res.status(422).send("Username already in use");
+  }
+};
+exports.verifyToken = (token) => jwt.verify(token, process.env.JWT_SECRET);
