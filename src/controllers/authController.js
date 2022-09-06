@@ -1,53 +1,46 @@
 const bcrypt = require("bcrypt");
+const passport = require("passport");
 const { user } = require("../models");
-const auth = require("../utils/auth");
 
 exports.register = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
-    auth.isExistent(user, username, res);
-
+    const { username, password, age, description } = req.body;
     const hashedPassword = await user.hashPassword(password);
+    const findedUser = await user.findOne({ username });
+    if (findedUser) {
+      req.flash("message", "username is already taken");
+      res.redirect("/register");
+      return;
+    }
 
-    const createdUser = await user.create({
-      ...req.body,
+    const newUser = await user.create({
+      username,
       password: hashedPassword,
+      age,
+      description,
     });
-    res.json({
-      user: createdUser,
-      token: await auth.generateToken(createdUser, "30m"),
-    });
+    res.redirect("/login");
   } catch (error) {
-    next(error);
+    console.log(error);
+    req.flash("message", error.message);
+    res.redirect("/register");
   }
 };
 exports.login = async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
-
-    const findedUser = await user.findOne({
-      username,
-    });
-    if (!findedUser) {
-      return res.status(422).send("Wrong credentials");
+  passport.authenticate("local", (error, user) => {
+    if (!user || error) {
+      console.log(error);
+      req.flash("message", error ? error.message : "Wrong credentials");
+      res.redirect("/login");
+      return;
     }
-
-    const isPasswordValid = await findedUser.validatePassword(password);
-    if (!isPasswordValid) {
-      return res.status(422).send("Wrong credentials");
-    }
-    res.json({
-      user: findedUser,
-      token: await auth.generateToken(findedUser, "30m"),
+    req.logIn(user, (err) => {
+      console.log(err);
+      req.flash("message", err.message);
+      res.redirect("/login");
+      return;
     });
-  } catch (error) {
-    next(error);
-  }
+    res.redirect("/profile");
+  })(req, res, next);
 };
-exports.getProfile = async (req, res, next) => {
-  try {
-    res.json(req.user);
-  } catch (error) {
-    next(error);
-  }
-};
+exports.getProfile = async (req, res, next) => {};
